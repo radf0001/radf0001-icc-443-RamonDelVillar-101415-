@@ -1,5 +1,5 @@
-# Ramón Del Villar. ID: 10141505
-# Justin Quijada. ID: 10137568
+## Ramón Del Villar. ID: 10141505
+## Justin Quijada. ID: 10137568
 
 # Instrucciones para ejecutar las pruebas
 Clonar el proyecto y ejecutar el archivo ServicioNominaTest.java
