@@ -1,0 +1,3 @@
+# Este Proyecto contiene la Practica 1: Pruebas Unitarias con JUnit para un Carrito de Compras
+### **Las clases CarritoTest, ItemCarritoTest y ProductoTest contienen todas las pruebas unitarias implementadas.**
+Para ejecutar el proyecto puede ejecutar cada una de las clases Test individual, ejecutar el comando **mvn test** si tiene maven instalado en su maquina o abrir el proyecto con Intellij Idea > Abrir el panel de Maven > Lifecycle > test 
