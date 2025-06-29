@@ -11,7 +11,7 @@ public enum Role {
      * - Product Management: Add, edit, delete, and view products
      * - User Management: Create and manage users
      */
-    ADMINISTRATOR,
+    ADMINISTRADOR,
 
     /**
      * Manager role with access to product management but limited user management.
@@ -19,12 +19,12 @@ public enum Role {
      * - Product Management: Add, edit, and view products
      * - Limited User Management: View users
      */
-    EMPLOYEE,
+    EMPLEADO,
 
     /**
      * User role with basic access to view products.
      * Permissions:
      * - Product Management: View products only
      */
-    CUSTOMERGUEST
+    CLIENTE
 }

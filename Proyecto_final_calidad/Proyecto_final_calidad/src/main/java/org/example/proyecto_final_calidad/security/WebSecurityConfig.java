@@ -43,12 +43,15 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth").permitAll()
+                        .requestMatchers("/api/documentacion").permitAll()
                         .requestMatchers("/", "/login", "/VAADIN/**", "/vaadinServlet/**",
                                 "/frontend/**", "/frontend-es6/**", "/frontend-es5/**").permitAll()
                         // Role-based access control
-                        .requestMatchers("/users").hasAnyAuthority("ROLE_ADMINISTRATOR", "ROLE_EMPLOYEE")
-                        .requestMatchers("/productos").hasAnyAuthority("ROLE_ADMINISTRATOR", "ROLE_EMPLOYEE")
+                        .requestMatchers("/users").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
+                        .requestMatchers("/productos").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO", "ROLE_CLIENTE")
+                        .requestMatchers("/stock").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
+                        .requestMatchers("/api/**").hasAnyAuthority("ROLE_ADMINISTRADOR")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling

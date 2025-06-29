@@ -1,6 +1,7 @@
 package org.example.proyecto_final_calidad.controlador;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -19,7 +20,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import org.example.proyecto_final_calidad.model.CategoriaProducto;
 import org.example.proyecto_final_calidad.model.Producto;
-import org.example.proyecto_final_calidad.model.Role;
 import org.example.proyecto_final_calidad.servicios.ProductoServicio;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,67 +36,6 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
     private boolean isAdmin = false;
     private boolean isEmployee = false;
 
-    private void checkUserRoles() {
-        // Check if user is authenticated
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() &&
-                !authentication.getPrincipal().equals("anonymousUser")) {
-            // Check user roles
-            if (authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMINISTRATOR.name()))) {
-                isAdmin = true;
-            } else if (authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.EMPLOYEE.name()))) {
-                isEmployee = true;
-            }
-        }
-    }
-
-    private void logout() {
-        // Limpiar el contexto de seguridad
-        SecurityContextHolder.clearContext();
-
-        // Eliminar el token JWT de la sesión de Vaadin
-        VaadinSession session = VaadinSession.getCurrent();
-        if (session != null) {
-            session.setAttribute("jwt", null);
-            session.close(); // opcional: cerrar la sesión por completo
-        }
-
-        // Redirigir a la página de login
-        getUI().ifPresent(ui -> ui.getPage().setLocation("login"));
-    }
-
-
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        // Check if user is authenticated
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() ||
-                authentication.getPrincipal().equals("anonymousUser")) {
-            // Redirect to login page if not authenticated
-            event.forwardTo(LoginView.class);
-            return;
-        }
-
-        // Reset role flags
-        isAdmin = false;
-        isEmployee = false;
-
-        // Check user roles
-        if (authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMINISTRATOR.name()))) {
-            isAdmin = true;
-        } else if (authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.EMPLOYEE.name()))) {
-            isEmployee = true;
-        } else {
-            // If user is neither admin nor manager, redirect to dashboard
-            // Regular users should only view products through the dashboard
-            event.forwardTo(DashboardView.class);
-        }
-    }
-
     private final Grid<Producto> grid = new Grid<>(Producto.class);
 
     private final TextField nombre = new TextField("Nombre");
@@ -104,11 +43,11 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
     private final Select<CategoriaProducto> categoria = new Select<>();
     private final NumberField precio = new NumberField("Precio");
     private final NumberField cantidad = new NumberField("Cantidad");
+    private final NumberField stockMinimo = new NumberField("Stock Mínimo");
 
     private final Button guardar = new Button("Guardar");
     private final Button limpiar = new Button("Limpiar");
 
-    // Filter components
     private final Dialog filterDialog = new Dialog();
     private final Button openFilterButton = new Button("Filtros");
 
@@ -125,64 +64,68 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
 
     public ProductoView(ProductoServicio productoServicio) {
         this._productoServicio = productoServicio;
+        verificarRoles();
+        configurarEncabezado();
+        configurarFiltros();
+        configurarFormulario();
+        configurarGrid();
+        cargarProductos();
+        guardar.addClickListener(e -> guardarProducto());
+        limpiar.addClickListener(e -> limpiarFormulario());
+    }
 
-        // Check user roles before configuring UI components
-        checkUserRoles();
+    private void verificarRoles() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+            isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRADOR"));
+            isEmployee = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLEADO"));
+        }
+    }
 
+    private void configurarEncabezado() {
         HorizontalLayout headerLayout = new HorizontalLayout();
         headerLayout.setWidthFull();
         headerLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
 
-        // Create title based on role
-        H2 title;
+        H2 titulo = new H2(isAdmin ? "Administración de Productos" : isEmployee ? "Gestión de Productos" : "Visualización de Productos");
+
+        Button dashboardButton = new Button("Dashboard", e -> getUI().ifPresent(ui -> ui.navigate("dashboard")));
+        Button logoutButton = new Button("Cerrar Sesión", e -> cerrarSesion());
+
+        dashboardButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        logoutButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+        HorizontalLayout botones = new HorizontalLayout(dashboardButton);
+
         if (isAdmin) {
-            title = new H2("Administración de Productos");
-        } else if (isEmployee) {
-            title = new H2("Gestión de Productos");
-        } else {
-            title = new H2("Visualización de Productos");
+            Button usuariosButton = new Button("Ver Usuarios", e -> getUI().ifPresent(ui -> ui.navigate("users")));
+            usuariosButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            botones.add(usuariosButton);
         }
 
-        // Create buttons layout for right side of header
-        HorizontalLayout buttonsLayout = new HorizontalLayout();
-
-        // Add dashboard button for all users
-        Button dashboardButton = new Button("Dashboard");
-        dashboardButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("dashboard")));
-        buttonsLayout.add(dashboardButton);
-
-        // Add user management button for admins
-        if (isAdmin) {
-            Button usersButton = new Button("Gestión de Usuarios");
-            usersButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("users")));
-            buttonsLayout.add(usersButton);
+        if (isAdmin || isEmployee) {
+            Button stockButton = new Button("Control de Stock", e -> getUI().ifPresent(ui -> ui.navigate("stock")));
+            stockButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            botones.add(stockButton);
         }
 
-        // Add logout button
-        Button logoutButton = new Button("Cerrar Sesión");
-        logoutButton.addClickListener(e -> logout());
-        buttonsLayout.add(logoutButton);
-
-        headerLayout.add(title, buttonsLayout);
+        botones.add(logoutButton);
+        headerLayout.add(titulo, botones);
         add(headerLayout);
+    }
 
-        categoria.setLabel("Categoría");
-        categoria.setItems(CategoriaProducto.values());
-        categoria.setPlaceholder("Seleccione una categoría");
+    private void cerrarSesion() {
+        SecurityContextHolder.clearContext();
+        VaadinSession.getCurrent().setAttribute("jwt", null);
+        getUI().ifPresent(ui -> ui.navigate("login"));
+    }
 
-        configurarFiltros();
-        configurarFormulario();
-
-        HorizontalLayout filterButtonLayout = new HorizontalLayout(openFilterButton);
-        filterButtonLayout.setWidthFull();
-        filterButtonLayout.setJustifyContentMode(JustifyContentMode.END);
-        add(filterButtonLayout);
-
-        configurarGrid();
-        cargarProductos();
-
-        guardar.addClickListener(e -> guardarProducto());
-        limpiar.addClickListener(e -> limpiarFormulario());
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            event.forwardTo(LoginView.class);
+        }
     }
 
     private void configurarFormulario() {
@@ -190,193 +133,140 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
 
         nombre.setRequired(true);
         descripcion.setRequired(true);
-        categoria.setEmptySelectionAllowed(false);
-        categoria.setRequiredIndicatorVisible(true);
-        precio.setRequired(true);
-        cantidad.setRequired(true);
-
-        // Set validation for price
+        categoria.setLabel("Categoría");
+        categoria.setItems(CategoriaProducto.values());
+        categoria.setPlaceholder("Seleccione una categoría");
         precio.setMin(0);
         precio.setStep(0.01);
-        precio.setHelperText("Debe ser mayor o igual a 0");
-
-        // Set validation for quantity
         cantidad.setMin(0);
         cantidad.setStep(1);
-        cantidad.setHelperText("Debe ser un número entero mayor o igual a 0");
+        stockMinimo.setMin(0);
+        stockMinimo.setStep(1);
 
-        // Show form to administrators and managers
         if (isAdmin || isEmployee) {
-            // Agrupar botones en una sola fila
-            HorizontalLayout botonesLayout = new HorizontalLayout(guardar, limpiar);
-            formulario.add(nombre, descripcion, categoria, precio, cantidad, botonesLayout);
+            HorizontalLayout botones = new HorizontalLayout(guardar, limpiar);
+            guardar.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            limpiar.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+            formulario.add(nombre, descripcion, categoria, precio, cantidad, stockMinimo, botones);
             add(formulario);
-
-            // Add title based on role
-            if (isAdmin) {
-                add(new H2("Administración de productos"));
-            } else {
-                add(new H2("Gestión de productos"));
-            }
-        } else {
-            // Show message for regular users
-            add(new H2("Visualización de productos"));
         }
     }
 
     private void configurarGrid() {
-        grid.setColumns("id", "nombre", "descripcion", "categoria", "precio", "cantidad");
+        HorizontalLayout filtrosBoton = new HorizontalLayout(openFilterButton);
+        filtrosBoton.setWidthFull();
+        filtrosBoton.setJustifyContentMode(JustifyContentMode.END);
+        openFilterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        add(filtrosBoton);
 
-        // Add action buttons based on user role
+        grid.setColumns("id", "nombre", "descripcion", "categoria", "precio", "cantidad", "stockMinimo");
         if (isAdmin || isEmployee) {
-            // Add a column with action buttons
             grid.addComponentColumn(producto -> {
-                HorizontalLayout buttonsLayout = new HorizontalLayout();
-
-                // Create edit button (available to both admin and manager)
-                Button editButton = new Button("Editar");
-                editButton.addClickListener(e -> {
+                Button editar = new Button("Editar", e -> {
                     productoSeleccionado = producto;
-                    llenarFormulario(productoSeleccionado);
+                    llenarFormulario(producto);
                 });
-                buttonsLayout.add(editButton);
+                editar.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-                // Create delete button (only available to admin)
+                Button toggleActivo = new Button(producto.isEstaActivo() ? "Desactivar" : "Activar");
+
                 if (isAdmin) {
-                    Button deleteButton = new Button("Eliminar");
-                    deleteButton.addClickListener(e -> {
-                        // Confirm deletion
-                        ConfirmDialog dialog = new ConfirmDialog(
-                                "Confirmar eliminación",
-                                "¿Está seguro que desea eliminar este producto?",
-                                "Eliminar", event -> {
-                            // Delete the product
-                            _productoServicio.deleteById(producto.getId());
-                            Notification.show("Producto eliminado");
-                            cargarProductos(); // Refresh the grid
-                        },
-                                "Cancelar", event -> {
-                            // User cancelled, do nothing
-                        }
-                        );
-                        dialog.open();
+                    toggleActivo.addClickListener(e -> {
+                        ConfirmDialog dialogo = new ConfirmDialog();
+                        dialogo.setHeader("Confirmar cambio de estado");
+                        dialogo.setText("¿Estás seguro que deseas " + (producto.isEstaActivo() ? "desactivar" : "activar") + " este producto?");
+
+                        dialogo.setConfirmText(producto.isEstaActivo() ? "Desactivar" : "Activar");
+                        dialogo.setConfirmButtonTheme(producto.isEstaActivo() ? ButtonVariant.LUMO_ERROR.getVariantName() : ButtonVariant.LUMO_SUCCESS.getVariantName());
+
+                        dialogo.setCancelText("Cancelar");
+                        dialogo.setCancelable(true);
+
+                        dialogo.addConfirmListener(event -> {
+                            producto.setEstaActivo(!producto.isEstaActivo());
+                            _productoServicio.save(producto);
+
+                            Notification.show(
+                                producto.isEstaActivo() ? "Producto activado" : "Producto desactivado",3000, Notification.Position.TOP_CENTER
+                            );
+
+                            cargarProductos();
+                        });
+
+                        dialogo.open();
                     });
-                    buttonsLayout.add(deleteButton);
+                } else if (isEmployee) {
+                    toggleActivo.setEnabled(false);
                 }
 
-                return buttonsLayout;
-            }).setHeader("Acciones");
-        }
 
+                toggleActivo.addThemeVariants(
+                    producto.isEstaActivo() ? ButtonVariant.LUMO_ERROR : ButtonVariant.LUMO_SUCCESS
+                );
+
+                VerticalLayout acciones = new VerticalLayout(editar, toggleActivo);
+                acciones.setSpacing(false);
+                acciones.setPadding(false);
+                acciones.setMargin(false);
+                acciones.setWidthFull();
+
+                return acciones;
+            }).setHeader("Acciones").setAutoWidth(true).setFlexGrow(0);
+        }
         add(grid);
     }
 
     private void cargarProductos() {
-        List<Producto> productos = _productoServicio.findAll();
-        grid.setItems(productos);
+        grid.setItems(_productoServicio.findAll());
     }
 
     private void llenarFormulario(Producto producto) {
-        nombre.setValue(producto.getNombre() != null ? producto.getNombre() : "");
-        descripcion.setValue(producto.getDescripcion() != null ? producto.getDescripcion() : "");
+        nombre.setValue(producto.getNombre());
+        descripcion.setValue(producto.getDescripcion());
         categoria.setValue(producto.getCategoria());
         precio.setValue(producto.getPrecio());
         cantidad.setValue((double) producto.getCantidad());
+        stockMinimo.setValue((double) producto.getStockMinimo());
     }
 
     private void guardarProducto() {
-        // Validate input fields
-        List<String> errors = validateForm();
-
-        if (!errors.isEmpty()) {
-            // Show error notification
-            Notification notification = Notification.show(
-                    errors.getFirst(),
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        List<String> errores = validarFormulario();
+        if (!errores.isEmpty()) {
+            Notification.show(errores.getFirst(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
-        if (productoSeleccionado == null) {
-            productoSeleccionado = new Producto();
-        }
-
+        if (productoSeleccionado == null) productoSeleccionado = new Producto();
         productoSeleccionado.setNombre(nombre.getValue());
         productoSeleccionado.setDescripcion(descripcion.getValue());
         productoSeleccionado.setCategoria(categoria.getValue());
-        productoSeleccionado.setPrecio(precio.getValue() != null ? precio.getValue() : 0);
-        productoSeleccionado.setCantidad(cantidad.getValue() != null ? cantidad.getValue().intValue() : 0);
+        productoSeleccionado.setPrecio(precio.getValue());
+        productoSeleccionado.setCantidad(cantidad.getValue().intValue());
+        productoSeleccionado.setStockMinimo(stockMinimo.getValue().intValue());
 
         try {
             _productoServicio.save(productoSeleccionado);
-            Notification.show("Producto guardado");
+            Notification.show("Producto guardado exitosamente");
             limpiarFormulario();
             cargarProductos();
-        } catch (IllegalArgumentException e) {
-            Notification notification = Notification.show(
-                    "Error al guardar: " + e.getMessage(),
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        } catch (Exception e) {
+            Notification.show("Error al guardar: " + e.getMessage(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
 
-    private List<String> validateForm() {
-        List<String> errors = new ArrayList<>();
+    private List<String> validarFormulario() {
+        List<String> errores = new ArrayList<>();
 
-        // Name validation
-        if (nombre.getValue() == null || nombre.getValue().trim().isEmpty()) {
-            errors.add("El nombre no puede estar vacío.");
-            nombre.setInvalid(true);
-        } else {
-            nombre.setInvalid(false);
-        }
+        if (nombre.isEmpty()) errores.add("El nombre no puede estar vacío.");
+        if (descripcion.isEmpty()) errores.add("La descripción no puede estar vacía.");
+        if (categoria.isEmpty()) errores.add("Debe seleccionar una categoría.");
+        if (precio.isEmpty() || precio.getValue() < 0) errores.add("Precio inválido.");
+        if (cantidad.isEmpty() || cantidad.getValue() < 0) errores.add("Cantidad inválida.");
+        if (stockMinimo.isEmpty() || stockMinimo.getValue() < 0) errores.add("Stock mínimo inválido.");
 
-        // Description validation
-        if (descripcion.getValue() == null || descripcion.getValue().trim().isEmpty()) {
-            errors.add("La descripción no puede estar vacía.");
-            descripcion.setInvalid(true);
-        } else {
-            descripcion.setInvalid(false);
-        }
-
-        // Category validation
-        if (categoria.getValue() == null) {
-            errors.add("Debe seleccionar una categoría.");
-            categoria.setInvalid(true);
-        } else {
-            categoria.setInvalid(false);
-        }
-
-        // Price validation
-        if (precio.getValue() == null) {
-            errors.add("El precio no puede estar vacío.");
-            precio.setInvalid(true);
-        } else if (precio.getValue() < 0) {
-            errors.add("El precio no puede ser negativo.");
-            precio.setInvalid(true);
-        } else {
-            precio.setInvalid(false);
-        }
-
-        // Quantity validation
-        if (cantidad.getValue() == null) {
-            errors.add("La cantidad no puede estar vacía.");
-            cantidad.setInvalid(true);
-        } else if (cantidad.getValue() < 0) {
-            errors.add("La cantidad no puede ser negativa.");
-            cantidad.setInvalid(true);
-        } else if (cantidad.getValue() != Math.floor(cantidad.getValue())) {
-            errors.add("La cantidad no puede ser decimal.");
-            cantidad.setInvalid(true);
-        } else {
-            cantidad.setInvalid(false);
-        }
-
-        return errors;
+        return errores;
     }
 
     private void limpiarFormulario() {
@@ -386,6 +276,7 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
         categoria.clear();
         precio.clear();
         cantidad.clear();
+        stockMinimo.clear();
         grid.asSingleSelect().clear();
     }
 

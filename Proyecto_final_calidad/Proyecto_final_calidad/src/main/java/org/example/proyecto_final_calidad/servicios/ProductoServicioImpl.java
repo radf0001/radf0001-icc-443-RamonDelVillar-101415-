@@ -69,6 +69,10 @@ public class ProductoServicioImpl implements ProductoServicio {
             errors.add("La cantidad no puede ser negativa");
         }
 
+        if (producto.getStockMinimo() < 0) {
+            errors.add("El Stock Mínimo no puede ser negativo");
+        }
+
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException("Error de validación: " + String.join(", ", errors));
         }

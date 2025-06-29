@@ -42,7 +42,7 @@ public class InitialUserSetup implements CommandLineRunner {
                     "admin",
                     passwordEncoder.encode("admin123"),
                     "admin@example.com",
-                    Role.ADMINISTRATOR
+                    Role.ADMINISTRADOR
             );
 
             userRepository.save(adminUser);

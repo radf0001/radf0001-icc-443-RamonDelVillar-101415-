@@ -1,7 +1,9 @@
 package org.example.proyecto_final_calidad.controlador;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
@@ -34,309 +36,261 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
     private final PasswordEncoder passwordEncoder;
 
     private final Grid<User> grid = new Grid<>(User.class);
+    private final Select<Role> filtroRol = new Select<>();
 
-    private final TextField username = new TextField("Username");
-    private final PasswordField password = new PasswordField("Password");
-    private final EmailField email = new EmailField("Email");
+    private final TextField username = new TextField("Usuario");
+    private final PasswordField password = new PasswordField("Contraseña");
+    private final EmailField email = new EmailField("Correo Electrónico");
     private final Select<Role> role = new Select<>();
 
-    private final Button save = new Button("Save");
-    private final Button clear = new Button("Clear");
+    private final Button save = new Button("Guardar");
+    private final Button clear = new Button("Limpiar");
+    private final Button filtroButton = new Button("Filtrar");
+
+    private final Dialog filtroDialog = new Dialog();
 
     private User selectedUser;
+    private String currentUsername;
+    private boolean isAdmin = false;
+    private boolean isEmployee = false;
 
     public UserView(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
 
-        // Event handlers for buttons
         save.addClickListener(e -> saveUser());
         clear.addClickListener(e -> clearForm());
+
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        clear.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        filtroButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     }
-
-    private void initializeUI() {
-        // Clear previous content
-        removeAll();
-
-        HorizontalLayout headerLayout = new HorizontalLayout();
-        headerLayout.setWidthFull();
-        headerLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
-        // Create title based on role
-        H2 title;
-        if (isAdmin) {
-            title = new H2("User Management");
-        } else {
-            title = new H2("User Information");
-        }
-
-        // Create buttons layout for right side of header
-        HorizontalLayout buttonsLayout = new HorizontalLayout();
-
-        // Add dashboard button
-        Button dashboardButton = new Button("Dashboard");
-        dashboardButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("dashboard")));
-        buttonsLayout.add(dashboardButton);
-
-        // Add products button
-        Button productsButton = new Button("Products");
-        productsButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("productos")));
-        buttonsLayout.add(productsButton);
-
-        // Add logout button
-        Button logoutButton = new Button("Logout");
-        logoutButton.addClickListener(e -> logout());
-        buttonsLayout.add(logoutButton);
-
-        headerLayout.add(title, buttonsLayout);
-        add(headerLayout);
-
-        configureForm();
-        configureGrid();
-        loadUsers();
-    }
-
-    private void logout() {
-        // Limpiar el contexto de seguridad
-        SecurityContextHolder.clearContext();
-
-        // Eliminar el token JWT de la sesión de Vaadin
-        VaadinSession session = VaadinSession.getCurrent();
-        if (session != null) {
-            session.setAttribute("jwt", null);
-            session.close(); // opcional: cerrar la sesión por completo
-        }
-
-        // Redirigir a la página de login
-        getUI().ifPresent(ui -> ui.getPage().setLocation("login"));
-    }
-
-
-    private boolean isAdmin = false;
-    private boolean isEmployee = false;
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // Check if user is authenticated
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() ||
-                authentication.getPrincipal().equals("anonymousUser")) {
-            // Redirect to login page if not authenticated
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
             event.forwardTo(LoginView.class);
             return;
         }
 
-        // Reset role flags
-        isAdmin = false;
-        isEmployee = false;
-
-        // Check user roles
-        if (authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMINISTRATOR.name()))) {
-            isAdmin = true;
-        } else if (authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.EMPLOYEE.name()))) {
-            isEmployee = true;
-        } else {
-            // Redirect to dashboard if not an administrator or manager
-            event.forwardTo(DashboardView.class);
+        isAdmin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRADOR"));
+        isEmployee = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLEADO"));
+        if (!isAdmin) {
+            event.forwardTo("dashboard");
             return;
         }
 
-        // Initialize UI components after role flags are set
+        currentUsername = authentication.getName();
         initializeUI();
     }
 
-    private void configureForm() {
-        // Only show form to administrators
-        if (isAdmin) {
-            FormLayout form = new FormLayout();
+    private void initializeUI() {
+        removeAll();
 
-            username.setRequired(true);
-            password.setRequired(true);
-            email.setRequired(true);
+        // ENCABEZADO
+        HorizontalLayout headerLayout = new HorizontalLayout();
+        headerLayout.setWidthFull();
+        headerLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
 
-            role.setLabel("Role");
-            role.setItems(Role.values());
-            role.setEmptySelectionAllowed(false);
-            role.setRequiredIndicatorVisible(true);
+        H2 title = new H2("Gestión de Usuarios");
 
-            // Group buttons in a single row
-            HorizontalLayout buttonsLayout = new HorizontalLayout(save, clear);
-            form.add(username, password, email, role, buttonsLayout);
-            add(form);
-        } else {
-            // Show message for managers
-            add(new H2("User information view only"));
+        HorizontalLayout buttonsLayout = new HorizontalLayout();
+        Button dashboard = new Button("Dashboard", e -> getUI().ifPresent(ui -> ui.navigate("dashboard")));
+        Button productos = new Button("Ver Productos", e -> getUI().ifPresent(ui -> ui.navigate("productos")));
+        Button logout = new Button("Cerrar Sesión", e -> logout());
+
+        dashboard.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        productos.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        logout.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+        buttonsLayout.add(dashboard, productos);
+        if (isAdmin || isEmployee) {
+            Button stock = new Button("Control de Stock", e -> getUI().ifPresent(ui -> ui.navigate("stock")));
+            stock.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            buttonsLayout.add(stock);
         }
+        buttonsLayout.add(logout);
+
+        headerLayout.add(title, buttonsLayout);
+        add(headerLayout);
+
+        if (isAdmin) {
+            configurarFormulario();
+        }
+
+        configurarFiltro();
+        configurarGrid();
+        loadUsers();
     }
 
-    private void configureGrid() {
-        // Configure which columns to show
+    private void configurarFiltro() {
+        filtroRol.setLabel("Filtrar por Rol");
+        filtroRol.setItems(Role.values());
+        filtroRol.setEmptySelectionAllowed(true);
+        filtroRol.setPlaceholder("Todos");
+
+        Button aplicar = new Button("Aplicar", e -> {
+            Role seleccionado = filtroRol.getValue();
+            if (seleccionado != null) {
+                grid.setItems(userRepository.findAll().stream()
+                        .filter(u -> u.getRole() == seleccionado)
+                        .toList());
+            } else {
+                loadUsers();
+            }
+            filtroDialog.close();
+        });
+        aplicar.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button limpiar = new Button("Limpiar", e -> {
+            filtroRol.clear();
+            loadUsers();
+            filtroDialog.close();
+        });
+        limpiar.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+
+        VerticalLayout contenido = new VerticalLayout(filtroRol, new HorizontalLayout(aplicar, limpiar));
+        filtroDialog.setHeaderTitle("Filtrar usuarios");
+        filtroDialog.add(contenido);
+        filtroDialog.setWidth("300px");
+
+        filtroButton.addClickListener(e -> filtroDialog.open());
+
+        HorizontalLayout wrapper = new HorizontalLayout(filtroButton);
+        wrapper.setWidthFull();
+        wrapper.setJustifyContentMode(JustifyContentMode.END);
+        add(wrapper);
+    }
+
+    private void configurarFormulario() {
+        FormLayout form = new FormLayout();
+
+        username.setRequired(true);
+        password.setRequired(true);
+        email.setRequired(true);
+        email.setErrorMessage("Correo inválido");
+
+        role.setLabel("Rol");
+        role.setItems(Role.values());
+        role.setRequiredIndicatorVisible(true);
+
+        HorizontalLayout botones = new HorizontalLayout(save, clear);
+        form.add(username, password, email, role, botones);
+        add(form);
+    }
+
+    private void configurarGrid() {
         grid.setColumns("id", "username", "email", "role");
 
-        // Add action buttons only for administrators
         if (isAdmin) {
-            // Add a column with edit and delete buttons
             grid.addComponentColumn(user -> {
-                // Create edit button
-                Button editButton = new Button("Edit");
-                editButton.addClickListener(e -> {
+                boolean esMismoUsuario = user.getUsername().equals(currentUsername);
+
+                Button editar = new Button("Editar", e -> {
                     selectedUser = user;
-                    fillForm(selectedUser);
+                    fillForm(user);
                 });
+                editar.setEnabled(!esMismoUsuario);
+                editar.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-                // Create delete button
-                Button deleteButton = new Button("Delete");
-                deleteButton.addClickListener(e -> {
-                    // Confirm deletion
-                    ConfirmDialog dialog = new ConfirmDialog(
-                            "Confirm deletion",
-                            "Are you sure you want to delete this user?",
-                            "Delete", event -> {
-                        // Delete the user
-                        userRepository.deleteById(user.getId());
-                        Notification.show("User deleted");
-                        loadUsers(); // Refresh the grid
-                    },
-                            "Cancel", event -> {
-                        // User cancelled, do nothing
-                    }
-                    );
-                    dialog.open();
+                Button toggleEstado = new Button(user.isEnabled() ? "Desactivar" : "Activar");
+
+                toggleEstado.addClickListener(e -> {
+                    ConfirmDialog dialogo = new ConfirmDialog();
+                    dialogo.setHeader("Confirmar cambio de estado");
+                    dialogo.setText("¿Estás seguro que deseas " + (user.isEnabled() ? "desactivar" : "activar") + " este usuario?");
+
+                    dialogo.setConfirmText(user.isEnabled() ? "Desactivar" : "Activar");
+                    dialogo.setConfirmButtonTheme(user.isEnabled() ? ButtonVariant.LUMO_ERROR.getVariantName() : ButtonVariant.LUMO_SUCCESS.getVariantName());
+
+                    dialogo.setCancelable(true);
+                    dialogo.setCancelText("Cancelar");
+
+                    dialogo.addConfirmListener(event -> {
+                        user.setEnabled(!user.isEnabled());
+                        userRepository.save(user);
+
+                        Notification.show("Usuario " + (user.isEnabled() ? "activado" : "desactivado"));
+
+
+                        loadUsers();
+                    });
+
+                    dialogo.open();
                 });
+                toggleEstado.setEnabled(!esMismoUsuario);
+                toggleEstado.addThemeVariants(user.isEnabled() ? ButtonVariant.LUMO_ERROR : ButtonVariant.LUMO_SUCCESS);
 
-                // Return a layout with both buttons
-                return new HorizontalLayout(editButton, deleteButton);
-            }).setHeader("Actions");
+
+                VerticalLayout acciones = new VerticalLayout(editar, toggleEstado);
+                acciones.setSpacing(false);
+                acciones.setPadding(false);
+                return acciones;
+            }).setHeader("Acciones").setAutoWidth(true).setFlexGrow(0);
         }
 
         add(grid);
     }
 
     private void loadUsers() {
-        List<User> users = userRepository.findAll();
-        grid.setItems(users);
+        grid.setItems(userRepository.findAll());
     }
 
     private void fillForm(User user) {
-        username.setValue(user.getUsername() != null ? user.getUsername() : "");
-        // Don't fill the password field for security reasons
-        password.clear();
-        email.setValue(user.getEmail() != null ? user.getEmail() : "");
+        username.setValue(user.getUsername());
+        password.clear(); // No mostrar contraseña
+        email.setValue(user.getEmail());
         role.setValue(user.getRole());
     }
 
     private void saveUser() {
-        // Validate input fields
-        List<String> errors = validateForm();
+        List<String> errores = validarFormulario();
 
-        if (!errors.isEmpty()) {
-            // Show error notification
-            Notification notification = Notification.show(
-                    errors.get(0),
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        if (!errores.isEmpty()) {
+            Notification.show(errores.getFirst(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
-        if (selectedUser == null) {
-            selectedUser = new User();
-        }
+        if (selectedUser == null) selectedUser = new User();
 
-        // Check if username already exists (for new users)
         if (selectedUser.getId() == null && userRepository.existsByUsername(username.getValue())) {
-            Notification notification = Notification.show(
-                    "Username already exists",
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("El nombre de usuario ya existe", 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
-        // Check if email already exists (for new users or email change)
         if ((selectedUser.getId() == null || !email.getValue().equals(selectedUser.getEmail()))
                 && userRepository.existsByEmail(email.getValue())) {
-            Notification notification = Notification.show(
-                    "Email already exists",
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("El correo ya está registrado", 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
         selectedUser.setUsername(username.getValue());
-        // Only update password if it's provided
-        if (!password.getValue().isEmpty()) {
+        if (!password.isEmpty()) {
             selectedUser.setPassword(passwordEncoder.encode(password.getValue()));
         }
         selectedUser.setEmail(email.getValue());
         selectedUser.setRole(role.getValue());
 
-        try {
-            userRepository.save(selectedUser);
-            Notification.show("User saved");
-            clearForm();
-            loadUsers();
-        } catch (Exception e) {
-            Notification notification = Notification.show(
-                    "Error saving user: " + e.getMessage(),
-                    5000,
-                    Notification.Position.MIDDLE
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
+        userRepository.save(selectedUser);
+        Notification.show("Usuario guardado exitosamente");
+        clearForm();
+        loadUsers();
     }
 
-    private List<String> validateForm() {
-        List<String> errors = new ArrayList<>();
+    private List<String> validarFormulario() {
+        List<String> errores = new ArrayList<>();
 
-        // Username validation
-        if (username.getValue() == null || username.getValue().trim().isEmpty()) {
-            errors.add("Username cannot be empty");
-            username.setInvalid(true);
-        } else if (username.getValue().length() < 3) {
-            errors.add("Username must be at least 3 characters");
-            username.setInvalid(true);
-        } else {
-            username.setInvalid(false);
-        }
+        if (username.isEmpty()) errores.add("El nombre de usuario es obligatorio");
+        if ((selectedUser == null || selectedUser.getId() == null) && password.isEmpty())
+            errores.add("La contraseña es obligatoria");
+        if (email.isEmpty() || email.isInvalid()) errores.add("Correo inválido");
+        if (role.isEmpty()) errores.add("Debe seleccionar un rol");
 
-        // Password validation (only for new users)
-        if (selectedUser == null || selectedUser.getId() == null) {
-            if (password.getValue() == null || password.getValue().trim().isEmpty()) {
-                errors.add("Password cannot be empty");
-                password.setInvalid(true);
-            } else if (password.getValue().length() < 8) {
-                errors.add("Password must be at least 8 characters");
-                password.setInvalid(true);
-            } else {
-                password.setInvalid(false);
-            }
-        }
-
-        // Email validation
-        if (email.getValue() == null || email.getValue().trim().isEmpty()) {
-            errors.add("Email cannot be empty");
-            email.setInvalid(true);
-        } else if (!email.isInvalid()) {
-            // The EmailField component already validates email format
-            email.setInvalid(false);
-        }
-
-        // Role validation
-        if (role.getValue() == null) {
-            errors.add("Role must be selected");
-            role.setInvalid(true);
-        } else {
-            role.setInvalid(false);
-        }
-
-        return errors;
+        return errores;
     }
 
     private void clearForm() {
@@ -346,5 +300,14 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
         email.clear();
         role.clear();
         grid.asSingleSelect().clear();
+    }
+
+    private void logout() {
+        SecurityContextHolder.clearContext();
+        VaadinSession session = VaadinSession.getCurrent();
+        if (session != null) {
+            session.setAttribute("jwt", null);
+        }
+        getUI().ifPresent(ui -> ui.navigate("login"));
     }
 }

@@ -15,6 +15,8 @@ public class Producto {
     private CategoriaProducto categoria;
     private double precio;
     private int cantidad;
+    private int stockMinimo;
+    private boolean estaActivo = true;
 
     // Getters y setters
     public Long getId() {
@@ -63,5 +65,21 @@ public class Producto {
 
     public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
+    }
+
+    public int getStockMinimo() {
+        return stockMinimo;
+    }
+
+    public void setStockMinimo(int stockMinimo) {
+        this.stockMinimo = stockMinimo;
+    }
+
+    public boolean isEstaActivo() {
+        return estaActivo;
+    }
+
+    public void setEstaActivo(boolean estaActivo) {
+        this.estaActivo = estaActivo;
     }
 }

@@ -2,6 +2,7 @@ package org.example.proyecto_final_calidad.controlador;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -22,16 +23,16 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Login view for the application.
- * This is the entry point for users to authenticate.
- * Redirects authenticated users to the dashboard.
+ * Vista de inicio de sesión de la aplicación.
+ * Punto de entrada para que los usuarios se autentiquen.
+ * Redirige a usuarios autenticados al panel de control.
  */
 @Route("login")
+@RouteAlias("inicio")
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
-    private final TextField username = new TextField("Username");
-    private final PasswordField password = new PasswordField("Password");
-    private final Button loginButton = new Button("Login");
+    private final TextField usuario = new TextField("Usuario");
+    private final PasswordField contrasena = new PasswordField("Contraseña");
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
@@ -45,56 +46,61 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        // Create a container for the login form
+        // Contenedor del formulario de inicio de sesión
         VerticalLayout loginForm = new VerticalLayout();
         loginForm.setWidth("400px");
         loginForm.setAlignItems(Alignment.CENTER);
 
-        H2 title = new H2("Sistema de Gestión de Productos");
+        H2 title = new H2("Sistema de Gestión de Inventario");
 
-        username.setWidthFull();
-        password.setWidthFull();
+        // Configurar campos y botones
+        usuario.setWidthFull();
+        usuario.setPlaceholder("Ingresa tu usuario");
+        contrasena.setWidthFull();
+        contrasena.setPlaceholder("Ingresa tu contrasena");
+        Button loginButton = new Button("Iniciar sesión");
         loginButton.setWidthFull();
-
+        loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         loginButton.addClickListener(e -> login());
 
-        loginForm.add(title, username, password, loginButton);
+        loginForm.add(title, usuario, contrasena, loginButton);
         add(loginForm);
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // Check if user is already authenticated
+        // Verificar si el usuario ya está autenticado
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() &&
                 !authentication.getPrincipal().equals("anonymousUser")) {
-            // Redirect to dashboard if already authenticated
+            // Redirigir al panel si ya está autenticado
             event.forwardTo(DashboardView.class);
         }
     }
 
     private void login() {
         try {
-            // Authenticate the user
+            // Autenticación del usuario
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username.getValue(), password.getValue()));
+                    new UsernamePasswordAuthenticationToken(
+                            usuario.getValue().trim(), contrasena.getValue().trim()));
 
-            // Set the authentication in the security context
+            // Establecer contexto de seguridad
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate JWT token
+            // Generar token JWT
             String jwt = jwtUtils.generateJwtToken(authentication);
 
-            // Store the token in the session
+            // Almacenar token en sesión
             VaadinSession.getCurrent().setAttribute("jwt", jwt);
 
-            // Navigate to the dashboard
+            // Navegar al panel de control
             UI.getCurrent().navigate("dashboard");
 
         } catch (AuthenticationException e) {
-            // Show error notification
+            // Mostrar notificación de error
             Notification notification = Notification.show(
-                    "Invalid username or password",
+                    "Usuario o contrasena inválidos",
                     5000,
                     Notification.Position.MIDDLE
             );
