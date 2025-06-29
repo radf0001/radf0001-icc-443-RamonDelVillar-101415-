@@ -1,9 +1,6 @@
 package org.example.proyecto_final_calidad.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Producto {
@@ -14,22 +11,12 @@ public class Producto {
 
     private String nombre;
     private String descripcion;
-    private Double precio;
-    private Integer cantidad;
+    @Enumerated(EnumType.STRING)
+    private CategoriaProducto categoria;
+    private double precio;
+    private int cantidad;
 
-    public Producto() {
-    }
-
-    public Producto(Long id, String nombre, String descripcion, Double precio, Integer cantidad) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.precio = precio;
-        this.cantidad = cantidad;
-    }
-
-    // getters y setters
-
+    // Getters y setters
     public Long getId() {
         return id;
     }
@@ -54,19 +41,27 @@ public class Producto {
         this.descripcion = descripcion;
     }
 
-    public Double getPrecio() {
+    public CategoriaProducto getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(CategoriaProducto categoria) {
+        this.categoria = categoria;
+    }
+
+    public double getPrecio() {
         return precio;
     }
 
-    public void setPrecio(Double precio) {
+    public void setPrecio(double precio) {
         this.precio = precio;
     }
 
-    public Integer getCantidad() {
+    public int getCantidad() {
         return cantidad;
     }
 
-    public void setCantidad(Integer cantidad) {
+    public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
     }
 }
