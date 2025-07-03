@@ -34,7 +34,17 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        // JUnit Jupiter API y Engine
+                testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+        testRuntimeOnly   'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Playwright para Java
+    testImplementation 'com.microsoft.playwright:playwright:1.47.0'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'playwright.useBrowserDownloads', 'true'
 }
 
 dependencyManagement {
