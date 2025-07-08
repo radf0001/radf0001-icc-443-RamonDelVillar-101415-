@@ -1,5 +1,6 @@
 package org.example.proyecto_final_calidad.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,23 +46,33 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth").permitAll()
                         .requestMatchers("/api/documentacion").permitAll()
+                        .requestMatchers("/api/**").hasAuthority("ROLE_ADMINISTRADOR")
                         .requestMatchers("/", "/login", "/VAADIN/**", "/vaadinServlet/**",
                                 "/frontend/**", "/frontend-es6/**", "/frontend-es5/**").permitAll()
                         // Role-based access control
                         .requestMatchers("/users").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
                         .requestMatchers("/productos").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO", "ROLE_CLIENTE")
                         .requestMatchers("/stock").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
-                        .requestMatchers("/api/**").hasAnyAuthority("ROLE_ADMINISTRADOR")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
-                        // Handle unauthorized access attempts
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendRedirect("/dashboard");
-                        })
-                        // Handle unauthenticated access attempts
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendRedirect("/login");
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"No autorizado\"}");
+                            } else {
+                                response.sendRedirect("/login");
+                            }
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"Acceso denegado\"}");
+                            } else {
+                                response.sendRedirect("/dashboard");
+                            }
                         })
                 );
 

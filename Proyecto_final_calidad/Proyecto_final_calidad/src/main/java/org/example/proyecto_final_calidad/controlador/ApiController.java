@@ -64,16 +64,16 @@ public class ApiController {
         ));
 
         docs.put("productos", Map.ofEntries(
-                Map.entry("GET /api/productos", "Lista productos con filtros opcionales (rol: ADMINISTRATOR)"),
-                Map.entry("GET /api/productos/{id}", "Obtiene un producto por su ID (rol: ADMINISTRATOR)"),
-                Map.entry("POST /api/productos", "Crea un nuevo producto (rol: ADMINISTRATOR)"),
-                Map.entry("PUT /api/productos/{id}", "Actualiza un producto existente (rol: ADMINISTRATOR)"),
-                Map.entry("DELETE /api/productos/{id}", "Desactiva (no elimina) un producto (rol: ADMINISTRATOR)")
+                Map.entry("GET /api/productos", "Lista productos con filtros opcionales (rol: ADMINISTRADOR)"),
+                Map.entry("GET /api/productos/{id}", "Obtiene un producto por su ID (rol: ADMINISTRADOR)"),
+                Map.entry("POST /api/productos", "Crea un nuevo producto (rol: ADMINISTRADOR)"),
+                Map.entry("PUT /api/productos/{id}", "Actualiza un producto existente (rol: ADMINISTRADOR)"),
+                Map.entry("DELETE /api/productos/{id}", "Desactiva (no elimina) un producto (rol: ADMINISTRADOR)")
         ));
 
         docs.put("stock", Map.ofEntries(
-                Map.entry("POST /api/stock/movimiento", "Registra un movimiento de stock (rol: ADMINISTRATOR)"),
-                Map.entry("GET /api/stock/historial", "Obtiene historial de movimientos con filtros opcionales (rol: ADMINISTRATOR)")
+                Map.entry("POST /api/stock/movimiento", "Registra un movimiento de stock (rol: ADMINISTRADOR)"),
+                Map.entry("GET /api/stock/historial", "Obtiene historial de movimientos con filtros opcionales (rol: ADMINISTRADOR)")
         ));
 
         docs.put("autenticacion", Map.of(
@@ -87,7 +87,7 @@ public class ApiController {
     // --- PRODUCTOS ---
     /**
      * Obtiene una lista de productos filtrados según los parámetros dados.
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param searchTerm texto de búsqueda en nombre o descripción (opcional)
      * @param categoria categoría del producto (opcional)
@@ -97,7 +97,7 @@ public class ApiController {
      * @param maxCantidad cantidad máxima (opcional)
      * @return lista de productos que cumplen los filtros
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @GetMapping("/productos")
     public List<Producto> obtenerProductosFiltrados(
             @RequestParam(required = false) String searchTerm,
@@ -112,12 +112,12 @@ public class ApiController {
 
     /**
      * Obtiene un producto por su ID.
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param id identificador del producto
      * @return producto si existe, 404 si no
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @GetMapping("/productos/{id}")
     public ResponseEntity<?> obtenerProductoPorId(@PathVariable Long id) {
         return productoServicio.findById(id)
@@ -127,12 +127,12 @@ public class ApiController {
 
     /**
      * Crea un nuevo producto. Campo estaActivo se setea automáticamente en true.
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param producto objeto producto recibido en el cuerpo
      * @return producto creado o mensaje de error
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @PostMapping("/productos")
     public ResponseEntity<?> crearProducto(@RequestBody Producto producto) {
         try {
@@ -146,13 +146,13 @@ public class ApiController {
 
     /**
      * Actualiza un producto existente.
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param id ID del producto a actualizar
      * @param actualizado objeto con los nuevos datos
      * @return producto actualizado o 404 si no se encuentra
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @PutMapping("/productos/{id}")
     public ResponseEntity<?> actualizarProducto(@PathVariable Long id, @RequestBody Producto actualizado) {
         return productoServicio.findById(id).map(p -> {
@@ -168,12 +168,12 @@ public class ApiController {
 
     /**
      * Marca un producto como inactivo (no lo elimina).
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param id ID del producto a desactivar
      * @return producto actualizado o 404 si no existe
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @DeleteMapping("/productos/{id}")
     public ResponseEntity<?> desactivarProducto(@PathVariable Long id) {
         return productoServicio.findById(id).map(p -> {
@@ -185,7 +185,7 @@ public class ApiController {
     // --- STOCK ---
     /**
      * Registra un movimiento de stock (entrada o salida).
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param productoId ID del producto
      * @param cantidad cantidad a mover (positiva)
@@ -193,7 +193,7 @@ public class ApiController {
      * @param usuario nombre del usuario que realiza el movimiento
      * @return mensaje de éxito o error
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @PostMapping("/stock/movimiento")
     public ResponseEntity<?> registrarMovimiento(@RequestParam Long productoId, @RequestParam int cantidad, @RequestParam TipoMovimiento tipo, @RequestParam String usuario) {
         try {
@@ -207,7 +207,7 @@ public class ApiController {
 
     /**
      * Obtiene el historial de movimientos de stock, con filtros opcionales.
-     * Requiere rol ADMINISTRATOR.
+     * Requiere rol ADMINISTRADOR.
      *
      * @param productoId ID del producto (opcional)
      * @param tipo tipo de movimiento (opcional)
@@ -215,7 +215,7 @@ public class ApiController {
      * @param hasta fecha/hora hasta (opcional, formato ISO 8601)
      * @return lista de movimientos de stock
      */
-    @PreAuthorize("hasRole('ROLE_ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ROLE_ADMINISTRADOR')")
     @GetMapping("/stock/historial")
     public List<Stock> historialStock(
             @RequestParam(required = false) Long productoId,

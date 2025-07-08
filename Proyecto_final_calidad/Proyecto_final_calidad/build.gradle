@@ -33,14 +33,21 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        // JUnit Jupiter API y Engine
-                testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
-        testRuntimeOnly   'org.junit.jupiter:junit-jupiter-engine:5.9.2'
-        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    // Playwright para Java
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine' // evita conflictos con JUnit 4
+    }
+
+    // JUnit 5.12.2 completamente alineado
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.12.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.12.2'
+    testImplementation 'org.junit.platform:junit-platform-commons:1.12.2'
+    testImplementation 'org.junit.platform:junit-platform-launcher:1.12.2'
+
+    // Playwright
     testImplementation 'com.microsoft.playwright:playwright:1.47.0'
 }
+
 
 test {
     useJUnitPlatform()

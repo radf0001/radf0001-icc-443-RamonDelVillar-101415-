@@ -64,6 +64,16 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         clear.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         filtroButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        grid.setId("gridUsers");
+        username.setId("username");
+        password.setId("password");
+        email.setId("email");
+        save.setId("saveUser");
+        clear.setId("clearForm");
+        filtroButton.setId("filterUser");
+        filtroRol.setId("rolFilter");
+        role.setId("role");
     }
 
     @Override
@@ -100,6 +110,10 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
         Button productos = new Button("Ver Productos", e -> getUI().ifPresent(ui -> ui.navigate("productos")));
         Button logout = new Button("Cerrar Sesión", e -> logout());
 
+        dashboard.setId("btnDashboard");
+        productos.setId("btnVerProductos");
+        logout.setId("btnLogout");
+
         dashboard.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         productos.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         logout.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -107,6 +121,7 @@ public class UserView extends VerticalLayout implements BeforeEnterObserver {
         buttonsLayout.add(dashboard, productos);
         if (isAdmin || isEmployee) {
             Button stock = new Button("Control de Stock", e -> getUI().ifPresent(ui -> ui.navigate("stock")));
+            stock.setId("btnStock");
             stock.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             buttonsLayout.add(stock);
         }

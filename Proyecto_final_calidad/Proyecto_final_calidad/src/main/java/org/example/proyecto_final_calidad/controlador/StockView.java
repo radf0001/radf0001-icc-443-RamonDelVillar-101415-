@@ -51,10 +51,21 @@ public class StockView extends VerticalLayout implements BeforeEnterObserver {
     private final Button botonFiltrar = new Button("Aplicar Filtros");
     private final Button botonLimpiar = new Button("Limpiar Filtros");
 
-
     public StockView(ProductoRepositorio productoRepositorio, StockServicio controlStockServicio) {
         this.productoRepositorio = productoRepositorio;
         this.controlStockServicio = controlStockServicio;
+
+        comboProducto.setId("comboProducto");
+        comboTipo.setId("comboTipoMovimiento");
+        cantidadField.setId("cantidadMovimiento");
+        registrarButton.setId("registrarMovimientoBtn");
+
+        filtroProducto.setId("filtroProducto");
+        filtroTipo.setId("filtroTipo");
+        filtroFechaInicio.setId("filtroFechaInicio");
+        filtroFechaFin.setId("filtroFechaFin");
+        botonFiltrar.setId("btnAplicarFiltros");
+        botonLimpiar.setId("btnLimpiarFiltros");
     }
 
     @Override
@@ -138,7 +149,6 @@ public class StockView extends VerticalLayout implements BeforeEnterObserver {
         grid.setItems(resultados);
     }
 
-
     private void limpiarFiltros() {
         filtroProducto.clear();
         filtroTipo.clear();
@@ -155,6 +165,7 @@ public class StockView extends VerticalLayout implements BeforeEnterObserver {
         grid.addColumn(Stock::getFecha).setHeader("Fecha");
         grid.addColumn(Stock::getUsuario).setHeader("Registrado por");
         grid.setWidthFull();
+        grid.setId("gridStock");
         add(grid);
     }
 
@@ -171,6 +182,11 @@ public class StockView extends VerticalLayout implements BeforeEnterObserver {
         Button productosButton = new Button("Ver Productos", e -> getUI().ifPresent(ui -> ui.navigate("productos")));
         Button usuariosButton = new Button("Ver Usuarios", e -> getUI().ifPresent(ui -> ui.navigate("users")));
         Button logoutButton = new Button("Cerrar Sesión", e -> logout());
+
+        dashboardButton.setId("btnDashboard");
+        productosButton.setId("btnVerProductos");
+        usuariosButton.setId("btnVerUsuarios");
+        logoutButton.setId("btnLogout");
 
         dashboardButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         productosButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

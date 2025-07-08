@@ -45,21 +45,29 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setSizeFull();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
+        setId("login-view");
 
         // Contenedor del formulario de inicio de sesión
         VerticalLayout loginForm = new VerticalLayout();
         loginForm.setWidth("400px");
         loginForm.setAlignItems(Alignment.CENTER);
+        loginForm.setId("login-form");
 
         H2 title = new H2("Sistema de Gestión de Inventario");
+        title.setId("login-title");
 
         // Configurar campos y botones
         usuario.setWidthFull();
         usuario.setPlaceholder("Ingresa tu usuario");
+        usuario.setId("input-usuario");
+
         contrasena.setWidthFull();
         contrasena.setPlaceholder("Ingresa tu contrasena");
+        contrasena.setId("input-contrasena");
+
         Button loginButton = new Button("Iniciar sesión");
         loginButton.setWidthFull();
+        loginButton.setId("btn-login");
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         loginButton.addClickListener(e -> login());
 
@@ -69,36 +77,26 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // Verificar si el usuario ya está autenticado
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() &&
                 !authentication.getPrincipal().equals("anonymousUser")) {
-            // Redirigir al panel si ya está autenticado
             event.forwardTo(DashboardView.class);
         }
     }
 
     private void login() {
         try {
-            // Autenticación del usuario
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             usuario.getValue().trim(), contrasena.getValue().trim()));
 
-            // Establecer contexto de seguridad
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generar token JWT
             String jwt = jwtUtils.generateJwtToken(authentication);
-
-            // Almacenar token en sesión
             VaadinSession.getCurrent().setAttribute("jwt", jwt);
-
-            // Navegar al panel de control
             UI.getCurrent().navigate("dashboard");
 
         } catch (AuthenticationException e) {
-            // Mostrar notificación de error
             Notification notification = Notification.show(
                     "Usuario o contrasena inválidos",
                     5000,

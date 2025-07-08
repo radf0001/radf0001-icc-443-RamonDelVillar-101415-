@@ -27,7 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Route("productos")
 public class ProductoView extends VerticalLayout implements BeforeEnterObserver {
 
@@ -90,21 +89,25 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
         H2 titulo = new H2(isAdmin ? "Administración de Productos" : isEmployee ? "Gestión de Productos" : "Visualización de Productos");
 
         Button dashboardButton = new Button("Dashboard", e -> getUI().ifPresent(ui -> ui.navigate("dashboard")));
-        Button logoutButton = new Button("Cerrar Sesión", e -> cerrarSesion());
-
         dashboardButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dashboardButton.setId("btn-dashboard");
+
+        Button logoutButton = new Button("Cerrar Sesión", e -> cerrarSesion());
         logoutButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        logoutButton.setId("btn-logout");
 
         HorizontalLayout botones = new HorizontalLayout(dashboardButton);
 
         if (isAdmin) {
             Button usuariosButton = new Button("Ver Usuarios", e -> getUI().ifPresent(ui -> ui.navigate("users")));
+            usuariosButton.setId("btn-ver-usuarios");
             usuariosButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             botones.add(usuariosButton);
         }
 
         if (isAdmin || isEmployee) {
             Button stockButton = new Button("Control de Stock", e -> getUI().ifPresent(ui -> ui.navigate("stock")));
+            stockButton.setId("btn-control-stock");
             stockButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             botones.add(stockButton);
         }
@@ -130,6 +133,15 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
 
     private void configurarFormulario() {
         FormLayout formulario = new FormLayout();
+
+        nombre.setId("nombre");
+        descripcion.setId("descripcion");
+        categoria.setId("categoria");
+        precio.setId("precio");
+        cantidad.setId("cantidad");
+        stockMinimo.setId("stockMinimo");
+        guardar.setId("btn-guardar");
+        limpiar.setId("btn-limpiar");
 
         nombre.setRequired(true);
         descripcion.setRequired(true);
@@ -157,9 +169,11 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
         filtrosBoton.setWidthFull();
         filtrosBoton.setJustifyContentMode(JustifyContentMode.END);
         openFilterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        openFilterButton.setId("btn-abrir-filtros");
         add(filtrosBoton);
 
         grid.setColumns("id", "nombre", "descripcion", "categoria", "precio", "cantidad", "stockMinimo");
+        grid.setId("grid-productos");
         if (isAdmin || isEmployee) {
             grid.addComponentColumn(producto -> {
                 Button editar = new Button("Editar", e -> {
@@ -281,6 +295,15 @@ public class ProductoView extends VerticalLayout implements BeforeEnterObserver 
     }
 
     private void configurarFiltros() {
+        searchField.setId("filtro-busqueda");
+        categoriaFilter.setId("filtro-categoria");
+        minPrecio.setId("filtro-precio-min");
+        maxPrecio.setId("filtro-precio-max");
+        minCantidad.setId("filtro-cantidad-min");
+        maxCantidad.setId("filtro-cantidad-max");
+        aplicarFiltros.setId("btn-aplicar-filtros");
+        limpiarFiltros.setId("btn-limpiar-filtros");
+
         // Configure filter components
         searchField.setPlaceholder("Ingrese texto a buscar");
         searchField.setClearButtonVisible(true);
