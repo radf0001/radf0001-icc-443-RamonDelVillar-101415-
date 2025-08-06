@@ -32,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
     private final TextField usuario = new TextField("Usuario");
+
     private final PasswordField contrasena = new PasswordField("Contraseña");
 
     private final AuthenticationManager authenticationManager;

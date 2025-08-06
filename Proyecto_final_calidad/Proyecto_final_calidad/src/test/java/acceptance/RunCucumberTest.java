@@ -1,12 +1,14 @@
 package acceptance;
 
-import org.junit.platform.suite.api.ConfigurationParameter;
-import org.junit.platform.suite.api.IncludeEngines;
-import org.junit.platform.suite.api.SelectClasspathResource;
-import org.junit.platform.suite.api.Suite;
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+import org.junit.runner.RunWith;
 
-@Suite
-@IncludeEngines("cucumber")
-@SelectClasspathResource("acceptance/features")
-@ConfigurationParameter(key = "cucumber.glue", value = "acceptance.stepdefs")
-public class RunCucumberTest {}
+@RunWith(Cucumber.class)
+@CucumberOptions(
+        features = "src/test/resources/features",
+        glue = {"org.example.proyecto_final.Calidad.stepdefs"},
+        plugin = {"pretty", "html:target/cucumber-reports.html"}
+)
+public class RunCucumberTest {
+}

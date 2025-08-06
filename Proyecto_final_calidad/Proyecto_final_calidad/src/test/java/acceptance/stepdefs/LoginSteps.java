@@ -7,7 +7,7 @@ import io.cucumber.java.en.*;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LoginStepDefinitions {
+public class LoginSteps {
 
     private Playwright playwright;
     private Browser browser;
