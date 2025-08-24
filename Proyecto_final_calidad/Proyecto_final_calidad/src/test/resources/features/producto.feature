@@ -6,7 +6,7 @@ Feature: Gestión de productos
     And completa el formulario con:
       | nombre      | Producto QA |
       | descripción | Prueba QA   |
-      | categoría   | COMPONENTES |
+      | categoría   | Otros       |
       | precio      | 10.50       |
       | cantidad    | 5           |
       | stockMinimo | 2           |

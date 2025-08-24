@@ -35,31 +35,25 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
-        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine' // evita conflictos con JUnit 4
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+        exclude group: 'org.junit.jupiter', module: 'junit-jupiter'
+        exclude group: 'org.junit.jupiter', module: 'junit-jupiter-api'
+        exclude group: 'org.junit.jupiter', module: 'junit-jupiter-engine'
     }
 
-    // JUnit 5
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.12.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.12.2'
-    testImplementation 'org.junit.platform:junit-platform-commons:1.12.2'
-    testImplementation 'org.junit.platform:junit-platform-launcher:1.12.2'
+    // JUnit 4
+    testImplementation 'junit:junit:4.13.2'
 
-    // Cucumber
-    testImplementation 'io.cucumber:cucumber-java:7.11.0'
-    testImplementation 'io.cucumber:cucumber-junit:7.11.0'
-    testImplementation 'io.cucumber:cucumber-spring:7.11.0'
+    // Cucumber con JUnit 4
+    testImplementation 'io.cucumber:cucumber-java:7.14.0'
+    testImplementation 'io.cucumber:cucumber-junit:7.14.0'
+    testImplementation 'io.cucumber:cucumber-spring:7.14.0'
+
+    // Mockito
     testImplementation 'org.mockito:mockito-inline:5.+'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0' // si no lo tenías
-
 
     // Playwright
     testImplementation 'com.microsoft.playwright:playwright:1.47.0'
-}
-
-test {
-    useJUnitPlatform()
-    systemProperty 'playwright.useBrowserDownloads', 'true'
-    systemProperty 'cucumber.filter.tags', '@smoke' // Opcional, para filtrar pruebas
 }
 
 dependencyManagement {
@@ -68,6 +62,7 @@ dependencyManagement {
     }
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+test {
+    useJUnit() // 👈 Para que corra con JUnit 4
+    systemProperty 'playwright.useBrowserDownloads', 'true'
 }
