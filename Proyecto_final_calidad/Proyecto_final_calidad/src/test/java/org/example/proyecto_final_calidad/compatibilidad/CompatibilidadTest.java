@@ -6,10 +6,6 @@ import com.microsoft.playwright.options.WaitForSelectorState;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.WaitUntilState;
 import org.junit.*;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,14 +15,9 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.*;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        classes = org.example.proyecto_final_calidad.ProyectoFinalCalidadApplication.class)
 public class CompatibilidadTest {
 
-    @LocalServerPort
-    private int port;
-
+    private final int port = 8080;
     static Playwright playwright;
     static Browser browser;
     private BrowserContext context;

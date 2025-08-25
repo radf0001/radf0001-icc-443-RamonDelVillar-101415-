@@ -4,10 +4,6 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitUntilState;
 import org.junit.*;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,13 +13,9 @@ import java.util.ArrayList;
 import static org.junit.Assert.*;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        classes = org.example.proyecto_final_calidad.ProyectoFinalCalidadApplication.class)
 public class RegressionTest {
 
-    @LocalServerPort
-    private int port;
+    private final int port = 8080;
 
     static Playwright playwright;
     static Browser browser;
