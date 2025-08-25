@@ -1,24 +1,41 @@
 package org.example.proyecto_final_calidad;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ApiExternoIntegrationTest {
 
-    @Autowired
-    private TestRestTemplate restTemplate;
-
+    private final String BASE_URL = "http://localhost:8080"; // apunta a tu app en 8080
     private final String username = "admin";
     private final String password = "admin123";
+    private RestTemplate restTemplate;
+
+    @Before
+    public void setup() {
+        restTemplate = new RestTemplate();
+
+        // Evita que RestTemplate lance excepción en 4xx/5xx
+        restTemplate.setErrorHandler(new org.springframework.web.client.ResponseErrorHandler() {
+            @Override
+            public boolean hasError(ClientHttpResponse response) throws IOException {
+                return false;
+            }
+
+            @Override
+            public void handleError(URI url, HttpMethod method, ClientHttpResponse response) throws IOException { }
+        });
+    }
 
     private String obtenerJwt() {
         HttpHeaders headers = new HttpHeaders();
@@ -27,71 +44,59 @@ public class ApiExternoIntegrationTest {
         String body = "username=" + username + "&password=" + password;
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
-        // Recibe directamente el JWT como String
-        ResponseEntity<String> response = restTemplate.postForEntity("/api/auth", request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(BASE_URL + "/api/auth", request, String.class);
 
-        assertEquals(200, response.getStatusCodeValue(), "Debe responder 200 en autenticación");
+        assertEquals("Debe responder 200 en autenticación", 200, response.getStatusCodeValue());
 
         String token = response.getBody();
-        assertNotNull(token, "El token JWT no debe ser null o vacío");
-        assertTrue(token.length() > 10, "El token JWT parece inválido");
+        assertNotNull("El token JWT no debe ser null o vacío", token);
+        assertTrue("El token JWT parece inválido", token.length() > 10);
 
         return token;
     }
 
-
     @Test
-    void autenticarConCredencialesValidas() {
-        obtenerJwt(); // Esto ya valida el login correctamente
+    public void autenticarConCredencialesValidas() {
+        obtenerJwt();
     }
 
     @Test
-    void obtenerProductosConJwtDebeFuncionar() {
+    public void obtenerProductosConJwtDebeFuncionar() {
         String token = obtenerJwt();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<String> response = restTemplate.exchange("/api/productos", HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(BASE_URL + "/api/productos", HttpMethod.GET, request, String.class);
 
-        assertEquals(200, response.getStatusCodeValue(), "Debe devolver 200 con JWT válido");
+        assertEquals("Debe devolver 200 con JWT válido", 200, response.getStatusCodeValue());
         assertNotNull(response.getBody());
     }
 
     @Test
-    void obtenerProductosSinJwtDebeFallar() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/api/productos", String.class);
-
-        // 👇 Imprimir el código de estado y el cuerpo de la respuesta
-        System.out.println("Código HTTP: " + response.getStatusCodeValue());
-        System.out.println("Cuerpo: " + response.getBody());
-
-        assertTrue(response.getStatusCode().value() == 401 || response.getStatusCode().value() == 403, "Debe fallar sin JWT");
+    public void obtenerProductosSinJwtDebeFallar() {
+        ResponseEntity<String> response = restTemplate.getForEntity(BASE_URL + "/api/productos", String.class);
+        assertTrue("Debe fallar sin JWT", response.getStatusCode().value() == 401 || response.getStatusCode().value() == 403);
     }
 
     @Test
-    void obtenerStockEntreFechasConJwt() {
+    public void obtenerStockEntreFechasConJwt() {
         String token = obtenerJwt();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         String desde = LocalDateTime.now().minusDays(5).toString();
         String hasta = LocalDateTime.now().toString();
-
-        String url = "/api/stock/historial?desde=" + desde + "&hasta=" + hasta;
+        String url = BASE_URL + "/api/stock/historial?desde=" + desde + "&hasta=" + hasta;
 
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
-    void crearProductoConJwtDebeFuncionar() {
+    public void crearProductoConJwtDebeFuncionar() {
         String token = obtenerJwt();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -105,24 +110,19 @@ public class ApiExternoIntegrationTest {
           "cantidad": 5,
           "stockMinimo": 1
         }
-    """;
+        """;
 
         HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(BASE_URL + "/api/productos", request, String.class);
 
-        ResponseEntity<String> response = restTemplate.postForEntity("/api/productos", request, String.class);
-
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Body: " + response.getBody());
-
-        assertEquals(HttpStatus.OK, response.getStatusCode(), "Debe devolver 200 OK al crear producto");
-        assertTrue(response.getBody().contains("Producto API Test"), "Debe contener el nombre del producto");
+        assertEquals("Debe devolver 200 OK al crear producto", HttpStatus.OK, response.getStatusCode());
+        assertTrue("Debe contener el nombre del producto", response.getBody().contains("Producto API Test"));
     }
 
     @Test
-    void obtenerProductoPorIdDebeFuncionar() {
+    public void obtenerProductoPorIdDebeFuncionar() {
         String token = obtenerJwt();
 
-        // Primero crea un producto
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -139,22 +139,19 @@ public class ApiExternoIntegrationTest {
         """;
 
         HttpEntity<String> request = new HttpEntity<>(productoJson, headers);
-        ResponseEntity<Map> postResponse = restTemplate.postForEntity("/api/productos", request, Map.class);
+        ResponseEntity<Map> postResponse = restTemplate.postForEntity(BASE_URL + "/api/productos", request, Map.class);
         Long id = Long.valueOf(postResponse.getBody().get("id").toString());
 
-        // Ahora buscarlo por ID
-        HttpEntity<Void> getRequest = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange("/api/productos/" + id, HttpMethod.GET, getRequest, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(BASE_URL + "/api/productos/" + id, HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-        assertEquals(200, response.getStatusCodeValue(), "Debe devolver 200 al buscar producto por ID");
+        assertEquals("Debe devolver 200 al buscar producto por ID", 200, response.getStatusCodeValue());
         assertTrue(response.getBody().contains("Test ID"));
     }
 
     @Test
-    void registrarMovimientoDeStockDebeFuncionar() {
+    public void registrarMovimientoDeStockDebeFuncionar() {
         String token = obtenerJwt();
 
-        // Crear producto primero
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -170,23 +167,20 @@ public class ApiExternoIntegrationTest {
         }
         """;
 
-        ResponseEntity<Map> postResponse = restTemplate.postForEntity("/api/productos", new HttpEntity<>(productoJson, headers), Map.class);
+        ResponseEntity<Map> postResponse = restTemplate.postForEntity(BASE_URL + "/api/productos", new HttpEntity<>(productoJson, headers), Map.class);
         Long productoId = Long.valueOf(postResponse.getBody().get("id").toString());
 
-        // Movimiento de stock
-        String url = "/api/stock/movimiento?productoId=" + productoId + "&cantidad=3&tipo=ENTRADA&usuario=admin";
+        String url = BASE_URL + "/api/stock/movimiento?productoId=" + productoId + "&cantidad=3&tipo=ENTRADA&usuario=admin";
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(headers), String.class);
 
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-
-        assertEquals(200, response.getStatusCodeValue(), "Debe registrar movimiento de stock");
+        assertEquals("Debe registrar movimiento de stock", 200, response.getStatusCodeValue());
         assertTrue(response.getBody().contains("Movimiento registrado"));
     }
 
     @Test
-    void accesoSinJwtDebeDevolver401() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/api/stock/historial", String.class);
-        assertTrue(response.getStatusCode().is4xxClientError(), "Debe devolver 401 o 403");
+    public void accesoSinJwtDebeDevolver401() {
+        ResponseEntity<String> response = restTemplate.getForEntity(BASE_URL + "/api/stock/historial", String.class);
+        System.out.println(response.getStatusCode());
+        assertTrue("Debe devolver 401 o 403", response.getStatusCode().is4xxClientError());
     }
 }
-
