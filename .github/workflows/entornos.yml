@@ -11,21 +11,6 @@ jobs:
     name: Run Tests in Docker Compose
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: proyecto_final_calidad
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -45,19 +30,10 @@ jobs:
           timeout 60 sh -c 'until curl -s http://localhost:8080/actuator/health | grep UP; do sleep 2; done'
 
       - name: Run Gradle tests
+        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
         run: ./gradlew test
 
       - name: Stop containers
         if: always()
         working-directory: Proyecto_final_calidad/Proyecto_final_calidad
         run: docker compose down
-
-  # production:
-  #   name: Deploy to Production
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repo
-  #       uses: actions/checkout@v3
-  #     - name: Deploy
-  #       run: |
-  #         echo "Aquí iría el deploy a producción (ej: subir imagen a DockerHub, desplegar en servidor, etc)"
