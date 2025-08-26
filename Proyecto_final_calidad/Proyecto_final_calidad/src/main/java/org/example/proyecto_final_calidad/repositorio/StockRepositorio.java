@@ -7,4 +7,5 @@ import java.util.List;
 public interface StockRepositorio extends JpaRepository<Stock, Long>, StockRepositorioCustom {
     List<Stock> findByProductoIdOrderByFechaDesc(Long productoId);
     List<Stock> findAllByOrderByFechaDesc();
+    int countStockByProductoIsNull();
 }

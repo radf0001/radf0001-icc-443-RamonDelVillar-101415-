@@ -1,9 +1,14 @@
 package org.example.proyecto_final_calidad.model;
 
 import jakarta.persistence.*;
+import org.hibernate.envers.AuditTable;
+import org.hibernate.envers.Audited;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "stock")
+@Audited
+@AuditTable(value = "au_stock")
 public class Stock {
 
     @Id

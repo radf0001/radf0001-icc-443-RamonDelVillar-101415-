@@ -1,8 +1,13 @@
 package org.example.proyecto_final_calidad.model;
 
 import jakarta.persistence.*;
+import org.hibernate.envers.AuditTable;
+import org.hibernate.envers.Audited;
 
 @Entity
+@Table(name = "producto")
+@Audited
+@AuditTable(value = "au_producto")
 public class Producto {
 
     @Id
