@@ -66,7 +66,7 @@ public class WebSecurityConfig {
                 .exceptionHandling(ex -> ex
                         // no redirecciones para API/actuator si algo falla
                         .authenticationEntryPoint((req, res, e) -> {
-                            if (req.getRequestURI().startsWith("/api/") || req.getRequestURI().startsWith("/actuator/")) {
+                            if (req.getRequestURI().startsWith("/api/")) {
                                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                 res.setContentType("application/json");
                                 res.getWriter().write("{\"error\":\"No autorizado\"}");
@@ -75,7 +75,7 @@ public class WebSecurityConfig {
                             }
                         })
                         .accessDeniedHandler((req, res, e) -> {
-                            if (req.getRequestURI().startsWith("/api/") || req.getRequestURI().startsWith("/actuator/")) {
+                            if (req.getRequestURI().startsWith("/api/")) {
                                 res.setStatus(HttpServletResponse.SC_FORBIDDEN);
                                 res.setContentType("application/json");
                                 res.getWriter().write("{\"error\":\"Acceso denegado\"}");
