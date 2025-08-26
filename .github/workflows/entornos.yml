@@ -37,8 +37,8 @@ jobs:
           java-version: 21
 
       - name: Build and start Docker Compose
-        run: |
-          docker compose up -d --build
+        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
+        run: docker-compose up -d --build
 
       - name: Wait for app to be healthy
         run: |
@@ -49,7 +49,8 @@ jobs:
 
       - name: Stop containers
         if: always()
-        run: docker compose down
+        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
+        run: docker-compose down
 
   # production:
   #   name: Deploy to Production
