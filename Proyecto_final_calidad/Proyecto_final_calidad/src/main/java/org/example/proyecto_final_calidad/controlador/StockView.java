@@ -3,6 +3,7 @@ package org.example.proyecto_final_calidad.controlador;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
@@ -215,17 +216,61 @@ public class StockView extends VerticalLayout implements BeforeEnterObserver {
         }
 
         try {
-            controlStockServicio.registrarMovimiento(producto, cantidad, tipo, currentUsername);
-            Notification.show("Movimiento registrado exitosamente");
-            comboProducto.clear();
-            comboTipo.clear();
-            cantidadField.clear();
-            cargarHistorial();
+            registrarMovimientoConValidacion(producto, cantidad, tipo, currentUsername);
         } catch (IllegalArgumentException e) {
             Notification.show(e.getMessage(), 4000, Notification.Position.MIDDLE)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
+
+    private void registrarMovimientoConValidacion(Producto producto,
+                                                  int cantidad,
+                                                  TipoMovimiento tipo,
+                                                  String currentUsername) {
+        int nuevaCantidad = producto.getCantidad();
+
+        // Ajustamos según el tipo de movimiento
+        if (tipo == TipoMovimiento.SALIDA) {
+            nuevaCantidad -= cantidad;
+        } else if (tipo == TipoMovimiento.ENTRADA) {
+            nuevaCantidad += cantidad;
+        }
+
+        // Verificamos si quedará igual o por debajo del stock mínimo
+        if (nuevaCantidad <= producto.getStockMinimo()) {
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("Stock mínimo alcanzado");
+            dialog.setText("⚠️ El producto '" + producto.getNombre()
+                    + "' quedará igual o por debajo del stock mínimo. ¿Desea continuar?");
+
+            dialog.setConfirmText("Sí");
+            dialog.setCancelText("No");
+            dialog.setCancelable(true);
+
+            dialog.addConfirmListener(event -> ejecutarMovimiento(producto, cantidad, tipo, currentUsername));
+
+            dialog.open();
+        } else {
+            // Caso normal: no hay riesgo de stock mínimo
+            ejecutarMovimiento(producto, cantidad, tipo, currentUsername);
+        }
+    }
+
+    /**
+     * Encapsula la lógica real de registrar y refrescar la vista
+     */
+    private void ejecutarMovimiento(Producto producto,
+                                    int cantidad,
+                                    TipoMovimiento tipo,
+                                    String currentUsername) {
+        controlStockServicio.registrarMovimiento(producto, cantidad, tipo, currentUsername);
+        Notification.show("Movimiento registrado exitosamente");
+        comboProducto.clear();
+        comboTipo.clear();
+        cantidadField.clear();
+        cargarHistorial();
+    }
+
 
     private void cargarHistorial() {
         List<Stock> historial = controlStockServicio.obtenerHistorial();
