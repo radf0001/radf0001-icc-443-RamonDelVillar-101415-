@@ -42,45 +42,54 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth").permitAll()
-                        .requestMatchers("/api/documentacion").permitAll()
+                        // *** Prometheus / Actuator ***
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // estáticos / vaadin
+                        .requestMatchers("/", "/login", "/error",
+                                "/VAADIN/**", "/vaadinServlet/**",
+                                "/frontend/**", "/frontend-es6/**", "/frontend-es5/**",
+                                "/icons/**", "/images/**", "/manifest.webmanifest").permitAll()
+
+                        // auth públicas de tu API
+                        .requestMatchers("/api/auth", "/api/documentacion").permitAll()
+
+                        // API protegida y vistas con roles
                         .requestMatchers("/api/**").hasAuthority("ROLE_ADMINISTRADOR")
-                        .requestMatchers("/", "/login", "/VAADIN/**", "/vaadinServlet/**",
-                                "/frontend/**", "/frontend-es6/**", "/frontend-es5/**").permitAll()
-                        // Role-based access control
-                        .requestMatchers("/users").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
-                        .requestMatchers("/productos").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO", "ROLE_CLIENTE")
-                        .requestMatchers("/stock").hasAnyAuthority("ROLE_ADMINISTRADOR", "ROLE_EMPLEADO")
+                        .requestMatchers("/users").hasAnyAuthority("ROLE_ADMINISTRADOR","ROLE_EMPLEADO")
+                        .requestMatchers("/productos").hasAnyAuthority("ROLE_ADMINISTRADOR","ROLE_EMPLEADO","ROLE_CLIENTE")
+                        .requestMatchers("/stock").hasAnyAuthority("ROLE_ADMINISTRADOR","ROLE_EMPLEADO")
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            if (request.getRequestURI().startsWith("/api/")) {
-                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                                response.setContentType("application/json");
-                                response.getWriter().write("{\"error\":\"No autorizado\"}");
+                .exceptionHandling(ex -> ex
+                        // no redirecciones para API/actuator si algo falla
+                        .authenticationEntryPoint((req, res, e) -> {
+                            if (req.getRequestURI().startsWith("/api/") || req.getRequestURI().startsWith("/actuator/")) {
+                                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"error\":\"No autorizado\"}");
                             } else {
-                                response.sendRedirect("/login");
+                                res.sendRedirect("/login");
                             }
                         })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            if (request.getRequestURI().startsWith("/api/")) {
-                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                response.setContentType("application/json");
-                                response.getWriter().write("{\"error\":\"Acceso denegado\"}");
+                        .accessDeniedHandler((req, res, e) -> {
+                            if (req.getRequestURI().startsWith("/api/") || req.getRequestURI().startsWith("/actuator/")) {
+                                res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"error\":\"Acceso denegado\"}");
                             } else {
-                                response.sendRedirect("/dashboard");
+                                res.sendRedirect("/dashboard");
                             }
                         })
                 );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
+
 
     /**
      * Configure the authentication provider.
