@@ -19,7 +19,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-    networks: [mon_net]
+    networks:
+      - mon_net
 
   db:
     image: postgres:15-alpine
@@ -30,7 +31,8 @@ services:
       - POSTGRES_PASSWORD=letmein
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks: [mon_net]
+    networks:
+      - mon_net
 
   test:
     image: gradle:8.9-jdk21-alpine
@@ -41,15 +43,15 @@ services:
     depends_on:
       - db
       - app
-    command: sh -c "
-      until curl -fsS http://app:8080/actuator/health; do
-        echo 'Esperando a que Spring Boot esté UP...'
-        sleep 2
-      done
-      chmod +x ./gradlew
-      ./gradlew test
-    "
-    networks: [mon_net]
+    command: >
+      sh -c "until curl -fsS http://app:8080/actuator/health; do
+        echo 'Esperando a que Spring Boot esté UP...';
+        sleep 2;
+      done;
+      chmod +x ./gradlew;
+      ./gradlew test"
+    networks:
+      - mon_net
 
 networks:
   mon_net:
