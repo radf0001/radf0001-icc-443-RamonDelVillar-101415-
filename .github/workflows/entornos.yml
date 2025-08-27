@@ -70,5 +70,6 @@ jobs:
           done
 
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --info --console=plain
         working-directory: ./Proyecto_final_calidad/Proyecto_final_calidad
+
