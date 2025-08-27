@@ -15,12 +15,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 21
-
       - name: Build and start Docker Compose
         working-directory: Proyecto_final_calidad/Proyecto_final_calidad
         run: docker compose -f docker-compose-basico.yml up -d --build
@@ -45,13 +39,8 @@ jobs:
           echo "❌ App did not become healthy in time"
           exit 1
           
-      - name: Make Gradle wrapper executable
-        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
-        run: chmod +x ./gradlew
-
-      - name: Run Gradle tests
-        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
-        run: ./gradlew test
+      - name: Run Gradle tests inside app container
+        run: docker exec -w /app proyecto-app ./gradlew test
 
       - name: Stop containers
         if: always()
