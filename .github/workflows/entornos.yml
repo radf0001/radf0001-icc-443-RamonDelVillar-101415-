@@ -1,26 +1,52 @@
-name: CI/CD Pipeline
+name: CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
-  test:
-    name: Run Tests in Docker Compose
+  build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: proyecto_final_calidad
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: letmein
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Build and start Docker Compose (including tests)
-        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 21
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Playwright Browsers
+        run: npx playwright install
+
+      - name: Wait for DB
         run: |
-          docker compose -f docker-compose-basico.yml up --build --abort-on-container-exit
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Esperando DB..."
+            sleep 2
+          done
 
-      - name: Stop containers
-        if: always()
-        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
-        run: docker compose -f docker-compose-basico.yml down
+      - name: Run Tests
+        run: ./gradlew test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/proyecto_final_calidad
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: letmein
