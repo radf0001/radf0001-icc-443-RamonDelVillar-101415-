@@ -15,32 +15,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Build and start Docker Compose
+      - name: Build and start Docker Compose (including tests)
         working-directory: Proyecto_final_calidad/Proyecto_final_calidad
-        run: docker compose -f docker-compose-basico.yml up -d --build
-
-      - name: Wait for app to be healthy
         run: |
-          APP_URL="http://localhost:8080/actuator/health"
-          MAX_ATTEMPTS=30
-          SLEEP_TIME=5
-      
-          echo "Waiting for app to become healthy..."
-      
-          for i in $(seq 1 $MAX_ATTEMPTS); do
-            if curl -s $APP_URL --retry 5 --retry-delay 2 | grep -q '"status":"UP"'; then
-              echo "✅ App is healthy!"
-              exit 0
-            fi
-            echo "Waiting for app... ($i/$MAX_ATTEMPTS)"
-            sleep $SLEEP_TIME
-          done
-      
-          echo "❌ App did not become healthy in time"
-          exit 1
-          
-      - name: Run Gradle tests inside app container
-        run: docker exec -w /app proyecto-app ./gradlew test
+          docker compose -f docker-compose-basico.yml up --build --abort-on-container-exit
 
       - name: Stop containers
         if: always()
