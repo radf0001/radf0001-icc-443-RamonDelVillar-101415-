@@ -10,8 +10,7 @@ services:
       POSTGRES_PASSWORD: letmein
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - mon_net
+    networks: [mon_net]
 
   app:
     build:
@@ -27,14 +26,13 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 5s
       timeout: 3s
-      retries: 10
-    networks:
-      - mon_net
+      retries: 20
+    networks: [mon_net]
 
-  test:
+  tests:
     image: mcr.microsoft.com/playwright:focal
     container_name: proyecto-tests
     working_dir: /app
@@ -42,16 +40,20 @@ services:
       - ./:/app
     depends_on:
       - app
-    environment:
-      # URL de la app dentro de Docker
-      BASE_URL: http://app:8080
-    command: sh -c "npm ci && npx playwright install && ./gradlew test"
-    networks:
-      - mon_net
+      - db
+    entrypoint: >
+      sh -c "
+        echo 'Esperando que la app esté UP...';
+        until curl -f http://app:8080/actuator/health; do sleep 2; done;
+        echo 'App UP, instalando navegadores Playwright...';
+        npx playwright install;
+        echo 'Ejecutando tests...';
+        ./gradlew test
+      "
+    networks: [mon_net]
 
 networks:
   mon_net:
 
 volumes:
   pgdata:
-  
