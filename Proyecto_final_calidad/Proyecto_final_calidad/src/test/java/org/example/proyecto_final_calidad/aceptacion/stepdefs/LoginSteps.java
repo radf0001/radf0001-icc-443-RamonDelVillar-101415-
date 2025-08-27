@@ -41,7 +41,7 @@ public class LoginSteps extends SpringIntegrationTest {
 
     @Given("el usuario está en la página de login")
     public void abrirLogin() {
-        page.navigate("http://localhost:8080/login");
+        page.navigate("http://app:8080/login");
     }
 
     @When("ingresa usuario {string} y contraseña {string}")

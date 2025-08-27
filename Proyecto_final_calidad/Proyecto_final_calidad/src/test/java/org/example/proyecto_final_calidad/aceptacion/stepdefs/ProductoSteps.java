@@ -47,7 +47,7 @@ public class ProductoSteps extends SpringIntegrationTest {
 
     @Given("el usuario está autenticado como administrador")
     public void usuarioAutenticado() {
-        page.navigate("http://localhost:8080/login");
+        page.navigate("http://app:8080/login");
         fillVaadinField("Usuario", "admin",
                 "#input-usuario", "#input-usuario input",
                 "vaadin-text-field[id='input-usuario'] input", "[id='input-usuario'] input");
