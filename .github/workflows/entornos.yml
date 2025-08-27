@@ -34,8 +34,7 @@ jobs:
           echo "Waiting for app to become healthy..."
       
           for i in $(seq 1 $MAX_ATTEMPTS); do
-            response=$(curl -s $APP_URL)
-            if echo "$response" | grep -q '"status":"UP"'; then
+            if curl -s $APP_URL --retry 5 --retry-delay 2 | grep -q '"status":"UP"'; then
               echo "✅ App is healthy!"
               exit 0
             fi
