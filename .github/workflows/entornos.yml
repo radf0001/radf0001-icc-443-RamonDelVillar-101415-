@@ -38,6 +38,15 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install
 
+      # <-- NUEVO: instalar dependencias necesarias para que Playwright funcione en Linux -->
+      - name: Install Playwright Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwoff1 libvpx9 libevent-2.1-7t64 libopus0 \
+            libgstreamer-plugins-base1.0-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0 \
+            libharfbuzz-icu0 libsecret-1-0 libhyphen0 libmanette-0.2-0 libflite1 libgles2 \
+            gstreamer1.0-libav
+
       - name: Wait for DB
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do
@@ -47,8 +56,19 @@ jobs:
 
       - name: Grant gradlew execution permissions
         run: chmod +x ./Proyecto_final_calidad/Proyecto_final_calidad/gradlew
-      
+
+      # <-- NUEVO: levantar la app antes de ejecutar tests -->
+      - name: Start Spring Boot app
+        run: ./gradlew bootRun &
+        working-directory: ./Proyecto_final_calidad/Proyecto_final_calidad
+
+      - name: Wait for Spring Boot to be ready
+        run: |
+          until curl -s http://localhost:8080/actuator/health | grep UP; do
+            echo "Esperando Spring Boot..."
+            sleep 2
+          done
+
       - name: Run tests
         run: ./gradlew test
         working-directory: ./Proyecto_final_calidad/Proyecto_final_calidad
-
