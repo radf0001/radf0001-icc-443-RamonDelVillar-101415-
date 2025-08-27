@@ -47,6 +47,8 @@ services:
         until curl -f http://app:8080/actuator/health; do sleep 2; done;
         echo 'App UP, instalando navegadores Playwright...';
         npx playwright install;
+        echo 'Dando permisos a gradlew...';
+        chmod +x ./gradlew;
         echo 'Ejecutando tests...';
         ./gradlew test
       "
