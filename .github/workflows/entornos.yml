@@ -44,6 +44,10 @@ jobs:
       
           echo "❌ App did not become healthy in time"
           exit 1
+          
+      - name: Make Gradle wrapper executable
+        working-directory: Proyecto_final_calidad/Proyecto_final_calidad
+        run: chmod +x ./gradlew
 
       - name: Run Gradle tests
         working-directory: Proyecto_final_calidad/Proyecto_final_calidad
