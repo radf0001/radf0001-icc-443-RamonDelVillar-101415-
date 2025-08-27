@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 
 public class ApiExternoIntegrationTest {
 
-    private final String BASE_URL = "http://app:8080"; // apunta a tu app en 8080
+    private final String BASE_URL = "http://localhost:8080"; // apunta a tu app en 8080
     private final String username = "admin";
     private final String password = "admin123";
     private RestTemplate restTemplate;

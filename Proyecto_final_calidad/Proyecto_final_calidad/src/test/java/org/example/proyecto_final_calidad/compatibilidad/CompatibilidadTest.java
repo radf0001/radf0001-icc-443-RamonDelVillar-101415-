@@ -68,7 +68,7 @@ public class CompatibilidadTest {
     void login() throws Exception {
         try {
             System.out.println("🔐 Iniciando proceso de login...");
-            page.navigate("http://app:" + port + "/login", new Page.NavigateOptions().setTimeout(NAVIGATION_TIMEOUT).setWaitUntil(WaitUntilState.NETWORKIDLE));
+            page.navigate("http://localhost:" + port + "/login", new Page.NavigateOptions().setTimeout(NAVIGATION_TIMEOUT).setWaitUntil(WaitUntilState.NETWORKIDLE));
             System.out.println("🔍 Buscando elementos de login...");
             assertTrue(page.locator("#input-usuario").isVisible());
             assertTrue(page.locator("#input-contrasena").isVisible());
@@ -192,7 +192,7 @@ public class CompatibilidadTest {
             System.out.println("🔍 Probando en: " + browserName);
             BrowserType browserType = getBrowserType(browserName);
             try (Browser testBrowser = browserType.launch(new BrowserType.LaunchOptions().setHeadless(true)); BrowserContext testContext = testBrowser.newContext(); Page testPage = testContext.newPage()) {
-                testPage.navigate("http://app:" + port + "/login");
+                testPage.navigate("http://localhost:" + port + "/login");
                 testPage.locator("#input-usuario input").fill("admin");
                 testPage.locator("#input-contrasena input").fill("admin123");
                 testPage.locator("#btn-login").click();
@@ -468,7 +468,7 @@ public class CompatibilidadTest {
 
     private void testSinglePageConfiguration(Page testPage, String path, String checkSelector, String buttonSelector, NavigationAction navAction, String browser, String device) {
         try {
-            testPage.navigate("http://app:" + port + "/login");
+            testPage.navigate("http://localhost:" + port + "/login");
             testPage.waitForSelector("#input-usuario input", new Page.WaitForSelectorOptions().setTimeout(ELEMENT_TIMEOUT));
             testPage.waitForSelector("#input-contrasena input", new Page.WaitForSelectorOptions().setTimeout(ELEMENT_TIMEOUT));
             testPage.locator("#input-usuario input").fill("admin");

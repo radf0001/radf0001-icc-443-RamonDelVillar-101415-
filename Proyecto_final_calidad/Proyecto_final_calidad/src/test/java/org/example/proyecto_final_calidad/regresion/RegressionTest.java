@@ -75,7 +75,7 @@ public class RegressionTest {
     void loginAsAdmin() throws Exception {
         try {
             System.out.println("🔐 Iniciando login para pruebas de regresión...");
-            page.navigate("http://app:" + port + "/login",
+            page.navigate("http://localhost:" + port + "/login",
                     new Page.NavigateOptions()
                             .setTimeout(NAVIGATION_TIMEOUT)
                             .setWaitUntil(WaitUntilState.NETWORKIDLE));
@@ -114,7 +114,7 @@ public class RegressionTest {
                 page.locator("#logout-button").click();
             } else {
                 // Navegar directamente al login
-                page.navigate("http://app:" + port + "/login");
+                page.navigate("http://localhost:" + port + "/login");
             }
 
             page.waitForURL("**/login", new Page.WaitForURLOptions().setTimeout(NAVIGATION_TIMEOUT));
@@ -526,7 +526,7 @@ public class RegressionTest {
     private void navigateBackToDashboard() {
         try {
             if (!page.url().contains("dashboard")) {
-                page.navigate("http://app:" + port + "/dashboard");
+                page.navigate("http://localhost:" + port + "/dashboard");
                 page.waitForURL("**/dashboard",
                         new Page.WaitForURLOptions().setTimeout(NAVIGATION_TIMEOUT));
                 page.waitForLoadState(LoadState.NETWORKIDLE);
