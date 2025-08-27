@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: proyecto-db
+    environment:
+      POSTGRES_DB: proyecto_final_calidad
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: letmein
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - mon_net
+
   app:
     build:
       context: .
@@ -9,52 +21,37 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/proyecto_final_calidad
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=letmein
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/proyecto_final_calidad
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: letmein
     depends_on:
       - db
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
-    networks: [mon_net]
-
-  db:
-    image: postgres:15-alpine
-    container_name: proyecto-db
-    environment:
-      - POSTGRES_DB=proyecto_final_calidad
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=letmein
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks: [mon_net]
+    networks:
+      - mon_net
 
   test:
-    image: gradle:8.9-jdk21-alpine
+    image: mcr.microsoft.com/playwright:focal
     container_name: proyecto-tests
     working_dir: /app
     volumes:
       - ./:/app
     depends_on:
-      - db
       - app
-    command: >
-      sh -c "
-        apk add --no-cache curl;
-        until curl -fsS http://app:8080/actuator/health; do
-          echo 'Esperando a que Spring Boot esté UP...';
-          sleep 2;
-        done;
-        chmod +x ./gradlew;
-        ./gradlew test
-      "
-    networks: [mon_net]
+    environment:
+      # URL de la app dentro de Docker
+      BASE_URL: http://app:8080
+    command: sh -c "npm ci && npx playwright install && ./gradlew test"
+    networks:
+      - mon_net
 
 networks:
   mon_net:
 
 volumes:
   pgdata:
+  
