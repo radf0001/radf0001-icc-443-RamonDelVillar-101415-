@@ -40,7 +40,7 @@ services:
       - ./:/app
     depends_on:
       - db
-    command: sh -c "./gradlew test"
+    command: sh -c "chmod +x ./gradlew && ./gradlew test"
     networks: [ mon_net ]
 
 networks:
