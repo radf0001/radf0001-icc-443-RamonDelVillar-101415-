@@ -45,9 +45,10 @@ jobs:
             sleep 2
           done
 
-      - name: Run Tests
+      - name: Grant gradlew execution permissions
+        run: chmod +x ./Proyecto_final_calidad/Proyecto_final_calidad/gradlew
+      
+      - name: Run tests
         run: ./gradlew test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/proyecto_final_calidad
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: letmein
+        working-directory: ./Proyecto_final_calidad/Proyecto_final_calidad
+
