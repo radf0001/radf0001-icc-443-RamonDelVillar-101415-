@@ -32,6 +32,17 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks: [ mon_net ]
 
+  test:
+    image: gradle:8.9-jdk21-alpine
+    container_name: proyecto-tests
+    working_dir: /app
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+    command: ./gradlew test
+    networks: [ mon_net ]
+
 networks:
   mon_net:
 
